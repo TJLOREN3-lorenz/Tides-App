@@ -169,7 +169,8 @@ const API="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
 const MDAPI="https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions";
 const cache={};
 let stations=[];
-let station={id:"8726520",name:"Pass-A-Grille / St. Petersburg",state:"FL"};
+const DEFAULT_STATION={id:"8726520",name:"Pass-A-Grille / St. Petersburg",state:"FL",lat:27.7606,lng:-82.6269};
+let station={...DEFAULT_STATION};
 let recents=[];
 let favorites=[];
 // persistence — uses localStorage when available (hosted site), degrades safely in preview
@@ -179,6 +180,8 @@ const store={
 };
 function loadFavorites(){favorites=store.get("tide_favs",[]);}
 function saveFavorites(){store.set("tide_favs",favorites);}
+function loadLastStation(){return store.get("tide_last",null);}
+function saveLastStation(s){store.set("tide_last",{id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng});}
 function isFav(id){return favorites.some(f=>f.id===id);}
 function toggleFav(s){
   if(isFav(s.id)){favorites=favorites.filter(f=>f.id!==s.id);}
@@ -306,10 +309,11 @@ async function renderMonth(){
   }catch(err){box.innerHTML=`<div class="error">Couldn't load month.<br><small>${err.message}</small><br><button onclick="renderMonth()">Retry</button></div>`;}
 }
 function setStation(s){
-  station={id:s.id,name:s.name,state:s.state};
+  station={id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng};
   document.getElementById("locName").textContent=s.name;
   document.getElementById("locSub").textContent=`NOAA ${s.id}${s.state?" \u00b7 "+s.state:""}`;
   recents=[s,...recents.filter(r=>r.id!==s.id)].slice(0,5);
+  saveLastStation(station);
   Object.keys(cache).forEach(k=>delete cache[k]);
   weekStart=startOfWeek(new Date());
   monthAnchor=(()=>{const d=new Date();d.setDate(1);d.setHours(0,0,0,0);return d;})();
@@ -389,7 +393,11 @@ document.getElementById("prevMo").onclick=()=>{monthAnchor=new Date(monthAnchor.
 document.getElementById("nextMo").onclick=()=>{monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+1,1);renderMonth();};
 window.addEventListener("resize",()=>{if(document.getElementById("weekView").style.display!=="none")renderWeek();});
 loadFavorites();
-recents=[{id:"8726520",name:"Pass-A-Grille / St. Petersburg",state:"FL",lat:27.7606,lng:-82.6269}];
+const _last=loadLastStation();
+station=_last?{...DEFAULT_STATION,..._last}:{...DEFAULT_STATION};
+document.getElementById("locName").textContent=station.name;
+document.getElementById("locSub").textContent=`NOAA ${station.id}${station.state?" \u00b7 "+station.state:""}`;
+recents=[{id:station.id,name:station.name,state:station.state,lat:station.lat,lng:station.lng}];
 renderNow(); renderWeek();
 </script>
 </body>

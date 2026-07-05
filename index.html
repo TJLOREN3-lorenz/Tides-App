@@ -20,10 +20,22 @@
   body {
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     background:var(--paper); color:var(--ink);
-    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     -webkit-font-smoothing:antialiased;
   }
-  .wrap { max-width:720px; margin:0 auto; padding:18px 16px 48px; }
+  /* opaque strip behind the status bar (clock/wifi/battery) so nothing collides while scrolling */
+  .statuscap {
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    height:env(safe-area-inset-top); background:var(--paper);
+  }
+  .wrap { max-width:720px; margin:0 auto; padding:0 16px 48px; }
+  .topzone {
+    position:sticky; top:0; z-index:30; background:var(--paper);
+    padding-top:calc(env(safe-area-inset-top) + 14px);
+    margin:0 -16px 16px; padding-left:16px; padding-right:16px; padding-bottom:6px;
+    box-shadow:0 6px 12px -8px rgba(11,58,83,0.18);
+  }
+  .topzone .locbar { margin-bottom:0; }
   header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; }
   .brand { display:flex; align-items:center; gap:9px; }
   .brand svg { width:26px; height:26px; flex-shrink:0; }
@@ -102,7 +114,9 @@
 </style>
 </head>
 <body>
+<div class="statuscap"></div>
 <div class="wrap">
+  <div class="topzone">
   <header>
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none"><path d="M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#16617f" stroke-width="2" stroke-linecap="round"/><path d="M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#2a8fb0" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="6" r="3" fill="#e2543b" opacity="0.85"/></svg>
@@ -113,6 +127,7 @@
     <span class="pin">&#128205;</span>
     <div class="txt"><div class="name" id="locName">Pass-A-Grille / St. Petersburg</div><div class="sub" id="locSub">NOAA 8726520 &middot; FL</div></div>
     <span class="chev">Change &rsaquo;</span>
+  </div>
   </div>
   <div class="now-panel" id="nowPanel">
     <div class="now-label">Right now</div>

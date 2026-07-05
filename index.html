@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tides">
+<meta name="apple-mobile-web-app-title" content="SimpleTides">
 <meta name="theme-color" content="#0b3a53">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
-<title>Tides</title>
+<title>SimpleTides</title>
 <style>
   :root {
     --deep:#0b3a53; --mid:#16617f; --surf:#2a8fb0; --foam:#d7eef2;
@@ -120,13 +120,13 @@
   <header>
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none"><path d="M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#16617f" stroke-width="2" stroke-linecap="round"/><path d="M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#2a8fb0" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="6" r="3" fill="#e2543b" opacity="0.85"/></svg>
-      <h1>Tides</h1>
+      <h1>SimpleTides</h1>
     </div>
   </header>
   <div class="locbar" id="locbar">
     <span class="pin">&#128205;</span>
     <div class="txt"><div class="name" id="locName">Pass-A-Grille / St. Petersburg</div><div class="sub" id="locSub">NOAA 8726520 &middot; FL</div></div>
-    <span class="chev">Change &rsaquo;</span>
+    <span class="chev"> &rsaquo;</span>
   </div>
   </div>
   <div class="now-panel" id="nowPanel">
@@ -145,14 +145,13 @@
   <div id="weekView">
     <div class="nav"><button id="prevWk">&lsaquo;</button><div class="range" id="wkRange">&mdash;</div><button id="nextWk">&rsaquo;</button></div>
     <div class="card"><canvas id="chart"></canvas></div>
-    <div id="chartNote" class="note"></div>
     <div id="weekTable"></div>
   </div>
   <div id="monthView" style="display:none;">
     <div class="nav"><button id="prevMo">&lsaquo;</button><div class="range" id="moRange">&mdash;</div><button id="nextMo">&rsaquo;</button></div>
     <div id="monthTable"><div class="loading">Loading&hellip;</div></div>
   </div>
-  <div class="foot">Predictions from NOAA CO-OPS &middot; datum MLLW &middot; local time<br>For planning only &mdash; not for navigation.</div>
+  <div class="foot">Predictions from NOAA CO-OPS &middot; datum MLLW &middot; local time</div>
 </div>
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet">
@@ -243,13 +242,11 @@ async function renderWeek(){
   document.getElementById("wkRange").textContent=weekStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" \u2013 "+end.toLocaleDateString("en-US",{month:"short",day:"numeric"});
   const card=document.querySelector("#weekView .card");
   card.innerHTML='<div class="loading">Loading tide curve\u2026</div>';
-  document.getElementById("weekTable").innerHTML=""; document.getElementById("chartNote").textContent="";
   try{
     const e2=new Date(end);e2.setDate(e2.getDate()+1);
     const [{pts,synth},hilo]=await Promise.all([getCurve(ymd(weekStart),ymd(e2)),fetchTides(ymd(weekStart),ymd(e2),true)]);
     card.innerHTML='<canvas id="chart"></canvas>';
     drawChart(pts,hilo,weekStart,end);
-    document.getElementById("chartNote").textContent=synth?"Curve estimated from high/low times (subordinate station)":"";
     renderWeekTable(hilo,weekStart,end);
   }catch(err){card.innerHTML=`<div class="error">Couldn't load predictions.<br><small>${err.message}</small><br><button onclick="renderWeek()">Retry</button></div>`;}
 }

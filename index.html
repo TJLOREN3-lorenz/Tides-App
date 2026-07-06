@@ -23,19 +23,13 @@
     padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     -webkit-font-smoothing:antialiased;
   }
-  /* opaque strip behind the status bar (clock/wifi/battery) so nothing collides while scrolling */
+  /* Fixed opaque strip behind the iOS status bar (clock/wifi/battery).
+     Only this stays put — the header and location bar scroll normally. */
   .statuscap {
     position:fixed; top:0; left:0; right:0; z-index:40;
     height:env(safe-area-inset-top); background:var(--paper);
   }
-  .wrap { max-width:720px; margin:0 auto; padding:0 16px 48px; }
-  .topzone {
-    position:sticky; top:0; z-index:30; background:var(--paper);
-    padding-top:calc(env(safe-area-inset-top) + 14px);
-    margin:0 -16px 16px; padding-left:16px; padding-right:16px; padding-bottom:6px;
-    box-shadow:0 6px 12px -8px rgba(11,58,83,0.18);
-  }
-  .topzone .locbar { margin-bottom:0; }
+  .wrap { max-width:720px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 14px) 16px 48px; }
   header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; }
   .brand { display:flex; align-items:center; gap:9px; }
   .brand svg { width:26px; height:26px; flex-shrink:0; }
@@ -46,6 +40,12 @@
   .locbar .name { font-size:15px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .locbar .sub { font-size:11px; color:#8a9aa2; font-weight:500; }
   .locbar .chev { color:#b8c4c9; font-size:13px; }
+  /* First-run empty state */
+  .empty { background:#fff; border-radius:18px; padding:36px 24px; text-align:center; box-shadow:0 1px 3px rgba(11,58,83,0.08); }
+  .empty svg { width:56px; height:56px; margin-bottom:12px; }
+  .empty h2 { font-size:18px; font-weight:800; color:var(--deep); margin-bottom:6px; }
+  .empty p { font-size:14px; color:#7a8b92; line-height:1.5; margin-bottom:18px; }
+  .empty button { padding:12px 22px; border:none; border-radius:12px; background:var(--deep); color:#fff; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
   .sheet-bg { position:fixed; inset:0; background:rgba(14,37,48,0.35); z-index:50; display:none; }
   .sheet-bg.open { display:block; }
   .sheet { position:fixed; left:0; right:0; bottom:0; z-index:51; background:var(--paper); border-radius:20px 20px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom)); max-height:82vh; display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.25s; }
@@ -87,7 +87,6 @@
   .loading,.error { text-align:center; padding:40px 20px; color:var(--mid); font-size:14px; }
   .error { color:#b04a34; }
   .error button { margin-top:10px; padding:8px 16px; border:none; border-radius:8px; background:var(--deep); color:#fff; font-weight:600; font-family:inherit; }
-  .note { font-size:11px; color:#9aa8ad; text-align:center; padding:2px 0 8px; }
   .day-group { margin-bottom:14px; }
   .day-head { font-size:13px; font-weight:800; color:var(--deep); padding:6px 4px; border-bottom:2px solid var(--foam); display:flex; justify-content:space-between; align-items:baseline; }
   .day-head .moon { font-size:15px; }
@@ -116,7 +115,6 @@
 <body>
 <div class="statuscap"></div>
 <div class="wrap">
-  <div class="topzone">
   <header>
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none"><path d="M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#16617f" stroke-width="2" stroke-linecap="round"/><path d="M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#2a8fb0" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="6" r="3" fill="#e2543b" opacity="0.85"/></svg>
@@ -125,32 +123,44 @@
   </header>
   <div class="locbar" id="locbar">
     <span class="pin">&#128205;</span>
-    <div class="txt"><div class="name" id="locName">Pass-A-Grille / St. Petersburg</div><div class="sub" id="locSub">NOAA 8726520 &middot; FL</div></div>
+    <div class="txt"><div class="name" id="locName">Choose a location</div><div class="sub" id="locSub">Search 3,000+ NOAA stations</div></div>
     <span class="chev"> &rsaquo;</span>
   </div>
+
+  <!-- First-run empty state -->
+  <div class="empty" id="emptyState" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#16617f" stroke-width="2" stroke-linecap="round"/><path d="M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" stroke="#2a8fb0" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="6" r="3" fill="#e2543b" opacity="0.85"/></svg>
+    <h2>Pick your beach</h2>
+    <p>Choose a tide station to see current conditions,<br>the week's tide curve, and a monthly table.</p>
+    <button id="emptyChoose">Find a station</button>
   </div>
-  <div class="now-panel" id="nowPanel">
-    <div class="now-label">Right now</div>
-    <div class="now-height" id="nowHeight">&mdash;</div>
-    <div class="now-trend" id="nowTrend">Loading current tide&hellip;</div>
-    <div class="next-row">
-      <div class="next-item"><div class="k">Next high</div><div class="v up" id="nextHigh">&mdash;</div><div class="t" id="nextHighT"></div></div>
-      <div class="next-item"><div class="k">Next low</div><div class="v down" id="nextLow">&mdash;</div><div class="t" id="nextLowT"></div></div>
+
+  <!-- Main app content, hidden until a station is chosen -->
+  <div id="appContent" style="display:none;">
+    <div class="now-panel" id="nowPanel">
+      <div class="now-label">Right now</div>
+      <div class="now-height" id="nowHeight">&mdash;</div>
+      <div class="now-trend" id="nowTrend">Loading current tide&hellip;</div>
+      <div class="next-row">
+        <div class="next-item"><div class="k">Next high</div><div class="v up" id="nextHigh">&mdash;</div><div class="t" id="nextHighT"></div></div>
+        <div class="next-item"><div class="k">Next low</div><div class="v down" id="nextLow">&mdash;</div><div class="t" id="nextLowT"></div></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tabWeek">Week Chart</button>
+      <button class="tab" id="tabMonth">Month Table</button>
+    </div>
+    <div id="weekView">
+      <div class="nav"><button id="prevWk">&lsaquo;</button><div class="range" id="wkRange">&mdash;</div><button id="nextWk">&rsaquo;</button></div>
+      <div class="card"><canvas id="chart"></canvas></div>
+      <div id="weekTable"></div>
+    </div>
+    <div id="monthView" style="display:none;">
+      <div class="nav"><button id="prevMo">&lsaquo;</button><div class="range" id="moRange">&mdash;</div><button id="nextMo">&rsaquo;</button></div>
+      <div id="monthTable"><div class="loading">Loading&hellip;</div></div>
     </div>
   </div>
-  <div class="tabs">
-    <button class="tab active" id="tabWeek">Week Chart</button>
-    <button class="tab" id="tabMonth">Month Table</button>
-  </div>
-  <div id="weekView">
-    <div class="nav"><button id="prevWk">&lsaquo;</button><div class="range" id="wkRange">&mdash;</div><button id="nextWk">&rsaquo;</button></div>
-    <div class="card"><canvas id="chart"></canvas></div>
-    <div id="weekTable"></div>
-  </div>
-  <div id="monthView" style="display:none;">
-    <div class="nav"><button id="prevMo">&lsaquo;</button><div class="range" id="moRange">&mdash;</div><button id="nextMo">&rsaquo;</button></div>
-    <div id="monthTable"><div class="loading">Loading&hellip;</div></div>
-  </div>
+
   <div class="foot">Predictions from NOAA CO-OPS &middot; datum MLLW &middot; local time</div>
 </div>
 <div class="sheet-bg" id="sheetBg"></div>
@@ -164,15 +174,31 @@
   <button class="sheet-close" id="sheetClose">Close</button>
 </div>
 <script>
+"use strict";
+/* ============================== config & state ============================== */
 const API="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
 const MDAPI="https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions";
-const cache={};
-let stations=[];
-const DEFAULT_STATION={id:"8726520",name:"Pass-A-Grille / St. Petersburg",state:"FL",lat:27.7606,lng:-82.6269};
-let station={...DEFAULT_STATION};
+const cache={};        // keyed per station+range, so switching stations is instant on return
+let stations=[];       // full NOAA station list, lazy-loaded
+let station=null;      // no default — app starts blank until the user picks one
 let recents=[];
 let favorites=[];
-// persistence — uses localStorage when available (hosted site), degrades safely in preview
+
+/* ============================== tiny helpers ============================== */
+const el=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+const parseNoaa=s=>{const[dt,tm]=s.split(" ");const[Y,M,D]=dt.split("-").map(Number);const[h,mi]=tm.split(":").map(Number);return new Date(Y,M-1,D,h,mi);};
+const fmtTime=d=>{let h=d.getHours(),m=d.getMinutes(),ap=h>=12?"PM":"AM";h=h%12||12;return `${h}:${pad(m)} ${ap}`;};
+const fmtDur=mins=>{const h=Math.floor(mins/60),m=Math.round(mins%60);return h>0?`in ${h}h ${m}m`:`in ${m}m`;};
+const startOfWeek=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x;};
+const firstOfMonth=d=>new Date(d.getFullYear(),d.getMonth(),1);
+const slimStation=s=>({id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng});
+function moonGlyph(date){const lp=2551443,ref=new Date(2000,0,6,18,14).getTime();const phase=((date.getTime()-ref)%(lp*1000))/(lp*1000);const p=phase<0?phase+1:phase;return["\u{1F311}","\u{1F312}","\u{1F313}","\u{1F314}","\u{1F315}","\u{1F316}","\u{1F317}","\u{1F318}"][Math.round(p*8)%8];}
+function haversine(a,b,c,d){const R=3959,dLat=(c-a)*Math.PI/180,dLon=(d-b)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+
+/* ============================== persistence ============================== */
+// Uses localStorage when available (hosted site); degrades safely in preview.
 const store={
   get(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -180,24 +206,19 @@ const store={
 function loadFavorites(){favorites=store.get("tide_favs",[]);}
 function saveFavorites(){store.set("tide_favs",favorites);}
 function loadLastStation(){return store.get("tide_last",null);}
-function saveLastStation(s){store.set("tide_last",{id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng});}
+function saveLastStation(s){store.set("tide_last",slimStation(s));}
 function isFav(id){return favorites.some(f=>f.id===id);}
 function toggleFav(s){
   if(isFav(s.id)){favorites=favorites.filter(f=>f.id!==s.id);}
-  else{favorites=[...favorites,{id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng}];}
+  else{favorites=[...favorites,slimStation(s)];}
   saveFavorites();
-  doSearch(document.getElementById("searchInput").value);
+  doSearch(el("searchInput").value);
 }
-const pad=n=>String(n).padStart(2,"0");
-const ymd=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-const parseNoaa=s=>{const[dt,tm]=s.split(" ");const[Y,M,D]=dt.split("-").map(Number);const[h,mi]=tm.split(":").map(Number);return new Date(Y,M-1,D,h,mi);};
-const fmtTime=d=>{let h=d.getHours(),m=d.getMinutes(),ap=h>=12?"PM":"AM";h=h%12||12;return `${h}:${pad(m)} ${ap}`;};
-const fmtDur=mins=>{const h=Math.floor(mins/60),m=Math.round(mins%60);return h>0?`in ${h}h ${m}m`:`in ${m}m`;};
-const startOfWeek=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x;};
-function moonGlyph(date){const lp=2551443,ref=new Date(2000,0,6,18,14).getTime();const phase=((date.getTime()-ref)%(lp*1000))/(lp*1000);const p=phase<0?phase+1:phase;return["\u{1F311}","\u{1F312}","\u{1F313}","\u{1F314}","\u{1F315}","\u{1F316}","\u{1F317}","\u{1F318}"][Math.round(p*8)%8];}
-function haversine(a,b,c,d){const R=3959,dLat=(c-a)*Math.PI/180,dLon=(d-b)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+
+/* ============================== NOAA data ============================== */
 let weekStart=startOfWeek(new Date());
-let monthAnchor=(()=>{const d=new Date();d.setDate(1);d.setHours(0,0,0,0);return d;})();
+let monthAnchor=firstOfMonth(new Date());
+
 async function fetchTides(begin,end,hilo){
   const key=`${station.id}-${begin}-${end}-${hilo?"hl":"6"}`;
   if(cache[key])return cache[key];
@@ -210,6 +231,7 @@ async function fetchTides(begin,end,hilo){
   const data=j.predictions||[];
   cache[key]=data; return data;
 }
+// Prefer 6-minute interval data; fall back to cosine-interpolated hi/lo extremes.
 async function getCurve(begin,end){
   try{const six=await fetchTides(begin,end,false);if(six.length>4)return{pts:six.map(p=>({t:parseNoaa(p.t),v:parseFloat(p.v)})),synth:false};}catch(e){}
   const hl=await fetchTides(begin,end,true).catch(()=>[]);
@@ -218,8 +240,32 @@ async function getCurve(begin,end){
   for(let i=0;i<ext.length-1;i++){const a=ext[i],b=ext[i+1],span=b.t-a.t;for(let s=0;s<=20;s++){const f=s/20;const v=a.v+(b.v-a.v)*(1-Math.cos(f*Math.PI))/2;pts.push({t:new Date(a.t.getTime()+span*f),v});}}
   return{pts,synth:true};
 }
+
+/* ============================== shared tide-table rendering ============================== */
+// Groups hi/lo predictions into {ymdKey: [{t,v,ty},...]} using a date filter.
+function groupByDay(hilo,keep){
+  const byDay={};
+  hilo.forEach(p=>{const t=parseNoaa(p.t);if(!keep(t))return;const k=ymd(t);(byDay[k]=byDay[k]||[]).push({t,v:parseFloat(p.v),ty:p.type});});
+  return byDay;
+}
+function tideRowHTML(r){
+  const neg=r.v<0;
+  return `<div class="row${neg?" neg":""}"><span class="pill ${neg?"NEG":r.ty}">${neg?"Neg Low":(r.ty==="H"?"High":"Low")}</span><span class="time">${fmtTime(r.t)}</span><span class="ht">${r.v.toFixed(2)} <span>ft</span></span></div>`;
+}
+function dayGroupsHTML(byDay,labelFn){
+  let html="";
+  Object.keys(byDay).sort().forEach(k=>{
+    const rows=byDay[k],d=rows[0].t;
+    html+=`<div class="day-group"><div class="day-head"><span>${labelFn(d,k)}</span><span class="moon">${moonGlyph(d)}</span></div>`;
+    rows.forEach(r=>html+=tideRowHTML(r));
+    html+=`</div>`;
+  });
+  return html;
+}
+
+/* ============================== views ============================== */
 async function renderNow(){
-  const el=id=>document.getElementById(id);
+  if(!station)return;
   el("nowHeight").textContent="\u2014"; el("nowTrend").textContent="Loading current tide\u2026";
   el("nextHigh").textContent="\u2014"; el("nextLow").textContent="\u2014"; el("nextHighT").textContent=""; el("nextLowT").textContent="";
   try{
@@ -237,21 +283,41 @@ async function renderNow(){
     if(nl){el("nextLow").textContent=nl.v.toFixed(1)+" ft";el("nextLowT").textContent=`${fmtTime(nl.t)} \u00b7 ${fmtDur((nl.t-now)/60000)}`;}
   }catch(err){el("nowTrend").textContent="Couldn't load \u2014 check connection";}
 }
+
 async function renderWeek(){
+  if(!station)return;
   const end=new Date(weekStart);end.setDate(end.getDate()+6);
-  document.getElementById("wkRange").textContent=weekStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" \u2013 "+end.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  el("wkRange").textContent=weekStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" \u2013 "+end.toLocaleDateString("en-US",{month:"short",day:"numeric"});
   const card=document.querySelector("#weekView .card");
   card.innerHTML='<div class="loading">Loading tide curve\u2026</div>';
   try{
     const e2=new Date(end);e2.setDate(e2.getDate()+1);
-    const [{pts,synth},hilo]=await Promise.all([getCurve(ymd(weekStart),ymd(e2)),fetchTides(ymd(weekStart),ymd(e2),true)]);
+    const [{pts},hilo]=await Promise.all([getCurve(ymd(weekStart),ymd(e2)),fetchTides(ymd(weekStart),ymd(e2),true)]);
     card.innerHTML='<canvas id="chart"></canvas>';
     drawChart(pts,hilo,weekStart,end);
-    renderWeekTable(hilo,weekStart,end);
+    const lim=new Date(end.getFullYear(),end.getMonth(),end.getDate(),23,59);
+    const byDay=groupByDay(hilo,t=>t>=weekStart&&t<=lim);
+    el("weekTable").innerHTML=dayGroupsHTML(byDay,d=>d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}));
   }catch(err){card.innerHTML=`<div class="error">Couldn't load predictions.<br><small>${err.message}</small><br><button onclick="renderWeek()">Retry</button></div>`;}
 }
+
+async function renderMonth(){
+  if(!station)return;
+  const y=monthAnchor.getFullYear(),m=monthAnchor.getMonth();
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  el("moRange").textContent=monthAnchor.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  const box=el("monthTable");box.innerHTML='<div class="loading">Loading month\u2026</div>';
+  try{
+    const e2=new Date(last);e2.setDate(e2.getDate()+1);
+    const hilo=await fetchTides(ymd(first),ymd(e2),true);
+    const byDay=groupByDay(hilo,t=>t.getMonth()===m);
+    const today=ymd(new Date());
+    box.innerHTML=dayGroupsHTML(byDay,(d,k)=>d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+(today===k?" \u00b7 Today":""))||'<div class="loading">No data.</div>';
+  }catch(err){box.innerHTML=`<div class="error">Couldn't load month.<br><small>${err.message}</small><br><button onclick="renderMonth()">Retry</button></div>`;}
+}
+
 function drawChart(pts,hilo,wStart,wEnd){
-  const cv=document.getElementById("chart"),dpr=window.devicePixelRatio||1;
+  const cv=el("chart"),dpr=window.devicePixelRatio||1;
   const W=cv.clientWidth||680,H=260;
   cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+"px";
   const ctx=cv.getContext("2d");ctx.scale(dpr,dpr);
@@ -265,58 +331,52 @@ function drawChart(pts,hilo,wStart,wEnd){
   const x=t=>padL+((t-winStart)/(winEnd-winStart))*(W-padL-padR);
   const y=v=>padT+(1-(v-vmin)/(vmax-vmin))*(H-padT-padB);
   ctx.clearRect(0,0,W,H);
+  // horizontal gridlines + height labels
   ctx.strokeStyle="#eef3f4";ctx.fillStyle="#9aa8ad";ctx.font="10px -apple-system,sans-serif";ctx.lineWidth=1;
   const step=(vmax-vmin)/3;
   for(let i=0;i<=3;i++){const v=vmin+step*i,yy=y(v);ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();ctx.fillText(v.toFixed(1)+"'",4,yy+3);}
+  // vertical day dividers + weekday labels
   ctx.textAlign="center";
   for(let d=new Date(wStart);d<=wEnd;d.setDate(d.getDate()+1)){const xx=x(d.getTime());ctx.strokeStyle="#f2f6f7";ctx.beginPath();ctx.moveTo(xx,padT);ctx.lineTo(xx,H-padB);ctx.stroke();ctx.fillStyle="#9aa8ad";ctx.fillText(d.toLocaleDateString("en-US",{weekday:"short"}).charAt(0)+d.getDate(),xx+(W/14),H-8);}
   ctx.textAlign="left";
+  // filled tide curve
   const grad=ctx.createLinearGradient(0,padT,0,H-padB);grad.addColorStop(0,"rgba(42,143,176,0.28)");grad.addColorStop(1,"rgba(215,238,242,0.15)");
   ctx.beginPath();ctx.moveTo(x(pts[0].t),H-padB);pts.forEach(p=>ctx.lineTo(x(p.t),y(p.v)));ctx.lineTo(x(pts[pts.length-1].t),H-padB);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
   ctx.beginPath();ctx.moveTo(x(pts[0].t),y(pts[0].v));pts.forEach(p=>ctx.lineTo(x(p.t),y(p.v)));ctx.strokeStyle="#16617f";ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.stroke();
   // zero waterline — only if negatives are visible
   if(vmin<0){const zy=y(0);ctx.strokeStyle="rgba(176,52,26,0.5)";ctx.lineWidth=1;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(padL,zy);ctx.lineTo(W-padR,zy);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#b0341a";ctx.font="9px -apple-system,sans-serif";ctx.textAlign="left";ctx.fillText("0 ft",padL+2,zy-3);}
+  // high/low markers with times (negative lows called out in red)
   const hl=hilo.map(p=>({t:parseNoaa(p.t),v:parseFloat(p.v),ty:p.type})).filter(p=>p.t.getTime()>=winStart&&p.t.getTime()<=winEnd);
   ctx.textAlign="center";
   hl.forEach(p=>{const xx=x(p.t.getTime()),yy=y(p.v);const neg=p.v<0;const col=neg?"#b0341a":(p.ty==="H"?"#16617f":"#c88a3f");ctx.beginPath();ctx.arc(xx,yy,neg?4.5:3.5,0,7);ctx.fillStyle=col;ctx.fill();const ly=p.ty==="H"?yy-8:yy+14;ctx.fillStyle=col;ctx.font=(neg?"bold ":"")+"9px -apple-system,sans-serif";ctx.fillText(fmtTime(p.t).replace(" ",""),xx,ly);if(neg){ctx.fillText(p.v.toFixed(1)+"'",xx,ly+10);}});
   ctx.font="9px -apple-system,sans-serif";ctx.textAlign="left";
+  // "now" marker
   const now=Date.now();
   if(now>=winStart&&now<=winEnd){const nx=x(now);ctx.strokeStyle="#e2543b";ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(nx,padT);ctx.lineTo(nx,H-padB);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#e2543b";ctx.font="bold 9px -apple-system,sans-serif";ctx.textAlign="center";ctx.fillText("NOW",nx,padT-3);ctx.textAlign="left";}
 }
-function renderWeekTable(hilo,wStart,wEnd){
-  const byDay={};const lim=new Date(wEnd.getFullYear(),wEnd.getMonth(),wEnd.getDate(),23,59);
-  hilo.forEach(p=>{const t=parseNoaa(p.t);if(t<wStart||t>lim)return;const k=ymd(t);(byDay[k]=byDay[k]||[]).push({t,v:parseFloat(p.v),ty:p.type});});
-  let html="";
-  Object.keys(byDay).sort().forEach(k=>{const rows=byDay[k],d=rows[0].t;html+=`<div class="day-group"><div class="day-head"><span>${d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span><span class="moon">${moonGlyph(d)}</span></div>`;rows.forEach(r=>{const neg=r.v<0;html+=`<div class="row${neg?" neg":""}"><span class="pill ${neg?"NEG":r.ty}">${neg?"Neg Low":(r.ty==="H"?"High":"Low")}</span><span class="time">${fmtTime(r.t)}</span><span class="ht">${r.v.toFixed(2)} <span>ft</span></span></div>`;});html+=`</div>`;});
-  document.getElementById("weekTable").innerHTML=html;
-}
-async function renderMonth(){
-  const y=monthAnchor.getFullYear(),m=monthAnchor.getMonth();
-  const first=new Date(y,m,1),last=new Date(y,m+1,0);
-  document.getElementById("moRange").textContent=monthAnchor.toLocaleDateString("en-US",{month:"long",year:"numeric"});
-  const box=document.getElementById("monthTable");box.innerHTML='<div class="loading">Loading month\u2026</div>';
-  try{
-    const e2=new Date(last);e2.setDate(e2.getDate()+1);
-    const hilo=await fetchTides(ymd(first),ymd(e2),true);
-    const byDay={};
-    hilo.forEach(p=>{const t=parseNoaa(p.t);if(t.getMonth()!==m)return;const k=ymd(t);(byDay[k]=byDay[k]||[]).push({t,v:parseFloat(p.v),ty:p.type});});
-    let html="";const today=ymd(new Date());
-    Object.keys(byDay).sort().forEach(k=>{const rows=byDay[k],d=rows[0].t;html+=`<div class="day-group"><div class="day-head"><span>${d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}${today===k?" \u00b7 Today":""}</span><span class="moon">${moonGlyph(d)}</span></div>`;rows.forEach(r=>{const neg=r.v<0;html+=`<div class="row${neg?" neg":""}"><span class="pill ${neg?"NEG":r.ty}">${neg?"Neg Low":(r.ty==="H"?"High":"Low")}</span><span class="time">${fmtTime(r.t)}</span><span class="ht">${r.v.toFixed(2)} <span>ft</span></span></div>`;});html+=`</div>`;});
-    box.innerHTML=html||'<div class="loading">No data.</div>';
-  }catch(err){box.innerHTML=`<div class="error">Couldn't load month.<br><small>${err.message}</small><br><button onclick="renderMonth()">Retry</button></div>`;}
+
+/* ============================== station selection ============================== */
+function updateLocbar(){
+  if(station){
+    el("locName").textContent=station.name;
+    el("locSub").textContent=`NOAA ${station.id}${station.state?" \u00b7 "+station.state:""}`;
+  }else{
+    el("locName").textContent="Choose a location";
+    el("locSub").textContent="Search 3,000+ NOAA stations";
+  }
 }
 function setStation(s){
-  station={id:s.id,name:s.name,state:s.state,lat:s.lat,lng:s.lng};
-  document.getElementById("locName").textContent=s.name;
-  document.getElementById("locSub").textContent=`NOAA ${s.id}${s.state?" \u00b7 "+s.state:""}`;
-  recents=[s,...recents.filter(r=>r.id!==s.id)].slice(0,5);
+  station=slimStation(s);
+  updateLocbar();
+  recents=[station,...recents.filter(r=>r.id!==station.id)].slice(0,5);
   saveLastStation(station);
-  Object.keys(cache).forEach(k=>delete cache[k]);
   weekStart=startOfWeek(new Date());
-  monthAnchor=(()=>{const d=new Date();d.setDate(1);d.setHours(0,0,0,0);return d;})();
+  monthAnchor=firstOfMonth(new Date());
+  el("emptyState").style.display="none";
+  el("appContent").style.display="";
   closeSheet();
   renderNow(); renderWeek();
-  if(document.getElementById("monthView").style.display!=="none")renderMonth();
+  if(el("monthView").style.display!=="none")renderMonth();
 }
 async function loadStations(){
   if(stations.length)return stations;
@@ -325,6 +385,7 @@ async function loadStations(){
   stations=(j.stations||[]).map(s=>({id:s.id,name:s.name,state:s.state||"",lat:s.lat,lng:s.lng}));
   return stations;
 }
+function findStation(id){return stations.find(x=>x.id===id)||favorites.find(x=>x.id===id)||recents.find(x=>x.id===id);}
 function stationRow(s){
   const fav=isFav(s.id);
   return `<div class="res-item" data-id="${s.id}">`
@@ -333,11 +394,11 @@ function stationRow(s){
     +`<div class="star ${fav?"on":""}" data-star="${s.id}" role="button" aria-label="Toggle favorite">${fav?"\u2605":"\u2606"}</div></div></div>`;
 }
 function wireResults(box){
-  box.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{const id=el.dataset.go;const s=stations.find(x=>x.id===id)||favorites.find(x=>x.id===id)||recents.find(x=>x.id===id);if(s)setStation(s);});
-  box.querySelectorAll("[data-star]").forEach(el=>el.onclick=ev=>{ev.stopPropagation();const id=el.dataset.star;const s=stations.find(x=>x.id===id)||favorites.find(x=>x.id===id)||recents.find(x=>x.id===id);if(s)toggleFav(s);});
+  box.querySelectorAll("[data-go]").forEach(n=>n.onclick=()=>{const s=findStation(n.dataset.go);if(s)setStation(s);});
+  box.querySelectorAll("[data-star]").forEach(n=>n.onclick=ev=>{ev.stopPropagation();const s=findStation(n.dataset.star);if(s)toggleFav(s);});
 }
 function renderSections(sections){
-  const box=document.getElementById("results");
+  const box=el("results");
   let html="";
   sections.forEach(sec=>{
     if(!sec.list.length)return;
@@ -363,7 +424,7 @@ async function doSearch(q){
   renderSections([{heading:`${matches.length} result${matches.length!==1?"s":""}`,list:matches}]);
 }
 async function nearMe(){
-  const btn=document.getElementById("gpsBtn");btn.disabled=true;btn.textContent="\u{1F4CD} \u2026";
+  const btn=el("gpsBtn");btn.disabled=true;btn.textContent="\u{1F4CD} \u2026";
   try{
     await loadStations();
     const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:10000,enableHighAccuracy:false}));
@@ -373,29 +434,40 @@ async function nearMe(){
   }catch(err){renderSections([{heading:err&&err.code===1?"Location permission denied":"Couldn't get location",list:[]}]);}
   finally{btn.disabled=false;btn.textContent="\u{1F4CD} Near me";}
 }
-function openSheet(){document.getElementById("sheetBg").classList.add("open");document.getElementById("sheet").classList.add("open");document.getElementById("searchInput").value="";doSearch("");setTimeout(()=>document.getElementById("searchInput").focus(),300);}
-function closeSheet(){document.getElementById("sheetBg").classList.remove("open");document.getElementById("sheet").classList.remove("open");}
-document.getElementById("locbar").onclick=openSheet;
-document.getElementById("sheetBg").onclick=closeSheet;
-document.getElementById("sheetClose").onclick=closeSheet;
-document.getElementById("gpsBtn").onclick=nearMe;
-let searchT;document.getElementById("searchInput").oninput=e=>{clearTimeout(searchT);searchT=setTimeout(()=>doSearch(e.target.value),200);};
-function showWeek(){document.getElementById("weekView").style.display="";document.getElementById("monthView").style.display="none";document.getElementById("tabWeek").classList.add("active");document.getElementById("tabMonth").classList.remove("active");}
-function showMonth(){document.getElementById("weekView").style.display="none";document.getElementById("monthView").style.display="";document.getElementById("tabMonth").classList.add("active");document.getElementById("tabWeek").classList.remove("active");renderMonth();}
-document.getElementById("tabWeek").onclick=showWeek;
-document.getElementById("tabMonth").onclick=showMonth;
-document.getElementById("prevWk").onclick=()=>{weekStart.setDate(weekStart.getDate()-7);weekStart=new Date(weekStart);renderWeek();};
-document.getElementById("nextWk").onclick=()=>{weekStart.setDate(weekStart.getDate()+7);weekStart=new Date(weekStart);renderWeek();};
-document.getElementById("prevMo").onclick=()=>{monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()-1,1);renderMonth();};
-document.getElementById("nextMo").onclick=()=>{monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+1,1);renderMonth();};
-window.addEventListener("resize",()=>{if(document.getElementById("weekView").style.display!=="none")renderWeek();});
+
+/* ============================== sheet & tabs ============================== */
+function openSheet(){el("sheetBg").classList.add("open");el("sheet").classList.add("open");el("searchInput").value="";doSearch("");setTimeout(()=>el("searchInput").focus(),300);}
+function closeSheet(){el("sheetBg").classList.remove("open");el("sheet").classList.remove("open");}
+function showWeek(){el("weekView").style.display="";el("monthView").style.display="none";el("tabWeek").classList.add("active");el("tabMonth").classList.remove("active");}
+function showMonth(){el("weekView").style.display="none";el("monthView").style.display="";el("tabMonth").classList.add("active");el("tabWeek").classList.remove("active");renderMonth();}
+
+el("locbar").onclick=openSheet;
+el("emptyChoose").onclick=openSheet;
+el("sheetBg").onclick=closeSheet;
+el("sheetClose").onclick=closeSheet;
+el("gpsBtn").onclick=nearMe;
+let searchT;el("searchInput").oninput=e=>{clearTimeout(searchT);searchT=setTimeout(()=>doSearch(e.target.value),200);};
+el("tabWeek").onclick=showWeek;
+el("tabMonth").onclick=showMonth;
+el("prevWk").onclick=()=>{weekStart.setDate(weekStart.getDate()-7);weekStart=new Date(weekStart);renderWeek();};
+el("nextWk").onclick=()=>{weekStart.setDate(weekStart.getDate()+7);weekStart=new Date(weekStart);renderWeek();};
+el("prevMo").onclick=()=>{monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()-1,1);renderMonth();};
+el("nextMo").onclick=()=>{monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+1,1);renderMonth();};
+window.addEventListener("resize",()=>{if(station&&el("weekView").style.display!=="none")renderWeek();});
+
+/* ============================== boot ============================== */
 loadFavorites();
 const _last=loadLastStation();
-station=_last?{...DEFAULT_STATION,..._last}:{...DEFAULT_STATION};
-document.getElementById("locName").textContent=station.name;
-document.getElementById("locSub").textContent=`NOAA ${station.id}${station.state?" \u00b7 "+station.state:""}`;
-recents=[{id:station.id,name:station.name,state:station.state,lat:station.lat,lng:station.lng}];
-renderNow(); renderWeek();
+if(_last&&_last.id){
+  station=_last;
+  recents=[slimStation(station)];
+  updateLocbar();
+  el("appContent").style.display="";
+  renderNow(); renderWeek();
+}else{
+  updateLocbar();
+  el("emptyState").style.display="";
+}
 </script>
 </body>
 </html>

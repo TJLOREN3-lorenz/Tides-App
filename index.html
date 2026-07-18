@@ -207,6 +207,31 @@ function loadFavorites(){favorites=store.get("tide_favs",[]);}
 function saveFavorites(){store.set("tide_favs",favorites);}
 function loadLastStation(){return store.get("tide_last",null);}
 function saveLastStation(s){store.set("tide_last",slimStation(s));}
+// Offline hi/lo cache: one 60-day window (prev month start -> current month end)
+// for the last-viewed station only. Serves as a fallback when NOAA is unreachable.
+const OFFLINE_KEY="tide_offline";
+function offlineWindow(){
+  const now=new Date();
+  const b=new Date(now.getFullYear(),now.getMonth()-1,1);           // start of previous month
+  const e=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);  // end of current month
+  return {b,e};
+}
+function saveOffline(hilo){
+  // Keep only rows inside the 60-day window; store with station id + timestamp.
+  const {b,e}=offlineWindow();
+  const rows=hilo.filter(p=>{const t=parseNoaa(p.t);return t>=b&&t<=e;});
+  if(rows.length)store.set(OFFLINE_KEY,{id:station.id,saved:Date.now(),rows});
+}
+function loadOffline(begin,end){
+  const o=store.get(OFFLINE_KEY,null);
+  if(!o||o.id!==station.id)return null;
+  // begin/end are yyyymmdd strings; slice the saved rows to the requested span.
+  const bs=`${begin.slice(0,4)}-${begin.slice(4,6)}-${begin.slice(6,8)} 00:00`;
+  const es=`${end.slice(0,4)}-${end.slice(4,6)}-${end.slice(6,8)} 23:59`;
+  const b=parseNoaa(bs),e=parseNoaa(es);
+  const rows=o.rows.filter(p=>{const t=parseNoaa(p.t);return t>=b&&t<=e;});
+  return rows.length?rows:null;
+}
 function isFav(id){return favorites.some(f=>f.id===id);}
 function toggleFav(s){
   if(isFav(s.id)){favorites=favorites.filter(f=>f.id!==s.id);}
@@ -224,12 +249,21 @@ async function fetchTides(begin,end,hilo){
   if(cache[key])return cache[key];
   const p=new URLSearchParams({product:"predictions",application:"tides_personal",begin_date:begin,end_date:end,datum:"MLLW",station:station.id,time_zone:"lst_ldt",units:"english",format:"json"});
   if(hilo)p.set("interval","hilo");
-  const r=await fetch(`${API}?${p}`);
-  if(!r.ok)throw new Error(`NOAA ${r.status}`);
-  const j=await r.json();
-  if(j.error)throw new Error(j.error.message||"No data for this station");
-  const data=j.predictions||[];
-  cache[key]=data; return data;
+  try{
+    const r=await fetch(`${API}?${p}`);
+    if(!r.ok)throw new Error(`NOAA ${r.status}`);
+    const j=await r.json();
+    if(j.error)throw new Error(j.error.message||"No data for this station");
+    const data=j.predictions||[];
+    cache[key]=data;
+    // Warm the offline cache from hi/lo fetches for the current last-viewed station.
+    if(hilo&&station&&loadLastStation()?.id===station.id)saveOffline(data);
+    return data;
+  }catch(err){
+    // NOAA unreachable or erroring — fall back to the saved 60-day hi/lo window.
+    if(hilo){const off=loadOffline(begin,end);if(off){cache[key]=off;return off;}}
+    throw err;
+  }
 }
 // Prefer 6-minute interval data; fall back to cosine-interpolated hi/lo extremes.
 async function getCurve(begin,end){
